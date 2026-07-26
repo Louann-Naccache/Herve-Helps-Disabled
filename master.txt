@@ -1,0 +1,49 @@
+# code.py
+import os
+import sys
+import base64
+from io import BytesIO
+
+import pyautogui
+from PIL import Image
+from openai import OpenAI
+
+def take_screenshot(path="screenshot.png"):
+    img = pyautogui.screenshot()
+    img.save(path)
+    return path
+
+def image_to_data_url(path):
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("utf-8")
+    return f"data:image/png;base64,{b64}"
+
+def main():
+    if len(sys.argv) < 2:
+        print('Usage: python code.py "bonjour chatgpt"')
+        sys.exit(1)
+
+    prompt = sys.argv[1]
+    prompt2 = "Je veux : {a}. Mais qu est ce que je peux faire sur mon ordinateur pour faire cela? Je suis une personne âgée, qui ne sait pas très bien utiliser un ordinateur. S il te plait aide moi avec des repère sur l ecran pour que je puisse me repérer pas à pas".format(a=prompt)
+    client = OpenAI(api_key="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")
+
+    screenshot_path = take_screenshot()
+    image_url = image_to_data_url(screenshot_path)
+
+    response = client.responses.create(
+        model="gpt-5",
+        input=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt2},
+                    {"type": "input_image", "image_url": image_url},
+                ],
+            }
+        ],
+    )
+
+    print(response.output_text)
+
+if __name__ == "__main__":
+    main()
